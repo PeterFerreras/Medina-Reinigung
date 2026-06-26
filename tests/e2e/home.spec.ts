@@ -23,3 +23,16 @@ test('registers quick hours for a completed mock visit', async ({ page }) => {
   await expect(page.getByText('Horas facturables').locator('..').getByText('6')).toBeVisible();
   await expect(page.getByText('Total cliente').locator('..').getByText('CHF 337.27')).toBeVisible();
 });
+
+test('shows pending billing grouped by client', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Pendiente de facturar' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Pendiente de facturar' })).toBeVisible();
+  await expect(page.getByText('Primera quincena')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Praxis Limmatblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Helvetia Treuhand AG' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Generar resumen' }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Enviar a bexio/ }).first()).toBeDisabled();
+});
