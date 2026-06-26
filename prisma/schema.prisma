@@ -146,27 +146,28 @@ model Employee {
 }
 
 model ClientServicePlan {
-  id                 String        @id @default(cuid())
-  clientId           String
-  frequencyType      FrequencyType
-  weekday            Weekday?
-  startTime          String?
-  defaultHours       Decimal       @db.Decimal(8, 2)
-  defaultPeopleCount Int
-  clientHourlyRate   Decimal       @db.Decimal(10, 2)
-  vatRate            Decimal       @db.Decimal(5, 2)
-  billingNotes       String?
-  operationalNotes   String?
-  active             Boolean       @default(true)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                  String        @id @default(cuid())
+  clientId            String
+  frequencyType       FrequencyType
+  weekdays            Weekday[]     @default([])
+  recurrenceStartDate DateTime      @db.Date
+  startTime           String?
+  defaultHours        Decimal       @db.Decimal(8, 2)
+  defaultPeopleCount  Int
+  clientHourlyRate    Decimal       @db.Decimal(10, 2)
+  vatRate             Decimal       @db.Decimal(5, 2)
+  billingNotes        String?
+  operationalNotes    String?
+  active              Boolean       @default(true)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
   serviceVisits ServiceVisit[]
 
   @@index([clientId])
   @@index([frequencyType])
-  @@index([weekday])
+  @@index([recurrenceStartDate])
   @@index([active])
 }
 
