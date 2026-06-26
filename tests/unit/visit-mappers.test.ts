@@ -104,6 +104,9 @@ describe('visit service mappers', () => {
       vatRate: 8.1,
       status: 'COMPLETED',
       notes: 'Use side entrance',
+      servicePlanId: 'plan-1',
+      employeeHours: [{ employeeId: 'employee-1', hoursWorked: 3 }],
+      isPersisted: true,
     });
   });
 });

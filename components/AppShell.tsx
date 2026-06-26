@@ -7,9 +7,8 @@ import { ClientsPage } from '@/components/clients/ClientsPage';
 import { PayrollHoursPage } from '@/components/payroll/PayrollHoursPage';
 import { WeeklySchedulePage } from '@/components/schedule/WeeklySchedulePage';
 import { TodayPage } from '@/components/today/TodayPage';
-import { mockClients } from '@/domain/clients/mock-clients';
 import type { MockClient } from '@/domain/clients/types';
-import { mockServicePlans } from '@/domain/schedule/mock-service-plans';
+import type { MockEmployee } from '@/domain/employees/types';
 import type { MockClientServicePlan } from '@/domain/schedule/types';
 import type { MockServiceVisit } from '@/domain/visits/types';
 
@@ -19,6 +18,9 @@ type AppShellProps = {
   initialClients: MockClient[];
   initialServicePlans: MockClientServicePlan[];
   initialVisits: MockServiceVisit[];
+  initialEmployees: MockEmployee[];
+  initialTodayDate: string;
+  isUsingTestData: boolean;
 };
 
 const navigationItems: Array<{ id: ActiveView; label: string }> = [
@@ -33,14 +35,14 @@ export function AppShell({
   initialClients,
   initialServicePlans,
   initialVisits,
+  initialEmployees,
+  initialTodayDate,
+  isUsingTestData,
 }: AppShellProps) {
   const [activeView, setActiveView] = useState<ActiveView>('today');
-  const [clients, setClients] = useState<MockClient[]>(
-    initialClients.length > 0 ? initialClients : mockClients,
-  );
-  const [servicePlans, setServicePlans] = useState<MockClientServicePlan[]>(
-    initialServicePlans.length > 0 ? initialServicePlans : mockServicePlans,
-  );
+  const [clients, setClients] = useState<MockClient[]>(initialClients);
+  const [servicePlans, setServicePlans] =
+    useState<MockClientServicePlan[]>(initialServicePlans);
 
   const handleSaveClient = (client: MockClient) => {
     setClients((currentClients) => {
@@ -85,7 +87,14 @@ export function AppShell({
         </div>
       </nav>
 
-      {activeView === 'today' ? <TodayPage initialVisits={initialVisits} /> : null}
+      {activeView === 'today' ? (
+        <TodayPage
+          visits={initialVisits}
+          employees={initialEmployees}
+          initialSelectedDate={initialTodayDate}
+          isUsingTestData={isUsingTestData}
+        />
+      ) : null}
       {activeView === 'clients' ? (
         <ClientsPage
           clients={clients}
