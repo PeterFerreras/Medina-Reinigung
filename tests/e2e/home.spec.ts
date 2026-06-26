@@ -48,3 +48,25 @@ test('shows payroll hours grouped by employee', async ({ page }) => {
   await expect(page.getByText('11.5')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Exportar Excel' }).first()).toBeVisible();
 });
+
+test('shows clients and weekly schedule screens', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Clientes' }).click();
+  await expect(page.getByRole('heading', { name: 'Clientes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Praxis Limmatblick' })).toBeVisible();
+  await expect(page.getByText('Próxima visita').first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Agenda semanal' }).click();
+  await expect(page.getByRole('heading', { name: 'Agenda semanal' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Lunes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Martes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Miércoles' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Jueves' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Viernes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sábado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Domingo' })).toBeVisible();
+  await expect(page.getByText('Helvetia Treuhand AG').first()).toBeVisible();
+  await expect(page.getByText('Quincenal').first()).toBeVisible();
+  await expect(page.getByText('Próxima fecha').first()).toBeVisible();
+});

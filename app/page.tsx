@@ -3,13 +3,17 @@
 import { useState } from 'react';
 
 import { PendingBillingPage } from '@/components/billing/PendingBillingPage';
+import { ClientsPage } from '@/components/clients/ClientsPage';
 import { PayrollHoursPage } from '@/components/payroll/PayrollHoursPage';
+import { WeeklySchedulePage } from '@/components/schedule/WeeklySchedulePage';
 import { TodayPage } from '@/components/today/TodayPage';
 
-type ActiveView = 'today' | 'billing' | 'payroll';
+type ActiveView = 'today' | 'clients' | 'schedule' | 'billing' | 'payroll';
 
 const navigationItems: Array<{ id: ActiveView; label: string }> = [
   { id: 'today', label: 'Hoy' },
+  { id: 'clients', label: 'Clientes' },
+  { id: 'schedule', label: 'Agenda semanal' },
   { id: 'billing', label: 'Pendiente de facturar' },
   { id: 'payroll', label: 'Horas para nómina' },
 ];
@@ -39,6 +43,8 @@ export default function Home() {
       </nav>
 
       {activeView === 'today' ? <TodayPage /> : null}
+      {activeView === 'clients' ? <ClientsPage /> : null}
+      {activeView === 'schedule' ? <WeeklySchedulePage /> : null}
       {activeView === 'billing' ? <PendingBillingPage /> : null}
       {activeView === 'payroll' ? <PayrollHoursPage /> : null}
     </>
