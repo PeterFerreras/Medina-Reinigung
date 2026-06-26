@@ -1,0 +1,287 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum ClientStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum FrequencyType {
+  ONE_TIME
+  WEEKLY
+  BIWEEKLY
+  MULTIPLE_DAYS_PER_WEEK
+  MONTHLY
+  CUSTOM
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum VisitStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_BILLABLE
+  NEEDS_REVIEW
+}
+
+enum InvoiceStatus {
+  NOT_INVOICED
+  READY_TO_INVOICE
+  INVOICED
+  SENT_TO_BEXIO
+  PAID
+  CANCELLED
+}
+
+enum PayrollStatus {
+  OPEN
+  APPROVED
+  PAID
+  LOCKED
+}
+
+enum InvoiceBatchStatus {
+  DRAFT
+  READY
+  SENT_TO_BEXIO
+  INVOICED
+  PAID
+  CANCELLED
+}
+
+model User {
+  id        String         @id @default(cuid())
+  name      String
+  email     String         @unique
+  role      UserRole       @default(STAFF)
+  active    Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  createdVisits ServiceVisit[]
+  auditLogs     AuditLog[]
+
+  @@index([role])
+  @@index([active])
+}
+
+model Client {
+  id                 String       @id @default(cuid())
+  bexioContactId     String?      @unique
+  displayName        String
+  contactType        String?
+  companyName        String?
+  firstName          String?
+  lastName           String?
+  email              String?
+  phone              String?
+  mobile             String?
+  address            String?
+  street             String?
+  houseNo            String?
+  postcode           String?
+  city               String?
+  country            String?
+  language           String?
+  correspondenceType String?
+  category           String?
+  remarks            String?
+  status             ClientStatus @default(ACTIVE)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  servicePlans  ClientServicePlan[]
+  serviceVisits ServiceVisit[]
+  invoiceBatches InvoiceBatch[]
+
+  @@index([displayName])
+  @@index([status])
+  @@index([city])
+  @@index([bexioContactId])
+}
+
+model Employee {
+  id            String         @id @default(cuid())
+  name          String
+  initials      String?
+  email         String?        @unique
+  phone         String?
+  hourlyPayRate Decimal        @db.Decimal(10, 2)
+  status        EmployeeStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  visitHours VisitEmployeeHour[]
+
+  @@index([name])
+  @@index([status])
+}
+
+model ClientServicePlan {
+  id                 String        @id @default(cuid())
+  clientId           String
+  frequencyType      FrequencyType
+  weekday            Weekday?
+  startTime          DateTime?     @db.Time
+  defaultHours       Decimal       @db.Decimal(8, 2)
+  defaultPeopleCount Int
+  clientHourlyRate   Decimal       @db.Decimal(10, 2)
+  vatRate            Decimal       @db.Decimal(5, 2)
+  billingNotes       String?
+  operationalNotes   String?
+  active             Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceVisits ServiceVisit[]
+
+  @@index([clientId])
+  @@index([frequencyType])
+  @@index([weekday])
+  @@index([active])
+}
+
+model ServiceVisit {
+  id                       String        @id @default(cuid())
+  clientId                 String
+  servicePlanId            String?
+  scheduledDate            DateTime      @db.Date
+  startedAt                DateTime?
+  finishedAt               DateTime?
+  status                   VisitStatus   @default(SCHEDULED)
+  clientHourlyRateSnapshot Decimal       @db.Decimal(10, 2)
+  vatRateSnapshot          Decimal       @db.Decimal(5, 2)
+  billableHours            Decimal       @default(0) @db.Decimal(8, 2)
+  subtotalAmount           Decimal       @default(0) @db.Decimal(12, 2)
+  vatAmount                Decimal       @default(0) @db.Decimal(12, 2)
+  totalAmount              Decimal       @default(0) @db.Decimal(12, 2)
+  invoiceStatus            InvoiceStatus @default(NOT_INVOICED)
+  bexioInvoiceId           String?
+  notes                    String?
+  createdById              String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  client          Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  servicePlan     ClientServicePlan?   @relation(fields: [servicePlanId], references: [id], onDelete: SetNull)
+  createdBy       User?                @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  employeeHours   VisitEmployeeHour[]
+  invoiceItems    InvoiceBatchItem[]
+
+  @@index([clientId, scheduledDate])
+  @@index([servicePlanId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([invoiceStatus])
+  @@index([createdById])
+  @@index([bexioInvoiceId])
+}
+
+model VisitEmployeeHour {
+  id              String        @id @default(cuid())
+  visitId         String
+  employeeId      String
+  hoursWorked     Decimal       @db.Decimal(8, 2)
+  payRateSnapshot Decimal       @db.Decimal(10, 2)
+  payrollStatus   PayrollStatus @default(OPEN)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  visit    ServiceVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  employee Employee     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@index([visitId])
+  @@index([employeeId])
+  @@index([employeeId, payrollStatus])
+  @@index([payrollStatus])
+}
+
+model InvoiceBatch {
+  id             String             @id @default(cuid())
+  clientId       String
+  periodStart    DateTime           @db.Date
+  periodEnd      DateTime           @db.Date
+  status         InvoiceBatchStatus @default(DRAFT)
+  totalHours     Decimal            @default(0) @db.Decimal(8, 2)
+  subtotalAmount Decimal            @default(0) @db.Decimal(12, 2)
+  vatAmount      Decimal            @default(0) @db.Decimal(12, 2)
+  totalAmount    Decimal            @default(0) @db.Decimal(12, 2)
+  bexioInvoiceId String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  client Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  items  InvoiceBatchItem[]
+
+  @@index([clientId])
+  @@index([clientId, periodStart, periodEnd])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+  @@index([bexioInvoiceId])
+}
+
+model InvoiceBatchItem {
+  id             String   @id @default(cuid())
+  invoiceBatchId String
+  visitId        String?
+  description    String
+  serviceDate    DateTime @db.Date
+  hours          Decimal  @db.Decimal(8, 2)
+  rate           Decimal  @db.Decimal(10, 2)
+  amount         Decimal  @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+
+  invoiceBatch InvoiceBatch  @relation(fields: [invoiceBatchId], references: [id], onDelete: Cascade)
+  visit        ServiceVisit? @relation(fields: [visitId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceBatchId])
+  @@index([visitId])
+  @@index([serviceDate])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityName String
+  entityId   String
+  action     String
+  oldData    Json?
+  newData    Json?
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityName, entityId])
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+}
