@@ -1,89 +1,18 @@
-'use client';
+import { AppShell } from '@/components/AppShell';
+import { getClientsWithServicePlans } from '@/services/clients/get-clients-with-service-plans';
 
-import { useState } from 'react';
+export default async function Home() {
+  if (process.env.CLEANOPS_USE_MOCKS === '1') {
+    return <AppShell initialClients={[]} initialServicePlans={[]} />;
+  }
 
-import { PendingBillingPage } from '@/components/billing/PendingBillingPage';
-import { ClientsPage } from '@/components/clients/ClientsPage';
-import { PayrollHoursPage } from '@/components/payroll/PayrollHoursPage';
-import { WeeklySchedulePage } from '@/components/schedule/WeeklySchedulePage';
-import { TodayPage } from '@/components/today/TodayPage';
-import { mockClients } from '@/domain/clients/mock-clients';
-import type { MockClient } from '@/domain/clients/types';
-import { mockServicePlans } from '@/domain/schedule/mock-service-plans';
-import type { MockClientServicePlan } from '@/domain/schedule/types';
+  try {
+    const { clients, servicePlans } = await getClientsWithServicePlans();
 
-type ActiveView = 'today' | 'clients' | 'schedule' | 'billing' | 'payroll';
+    return <AppShell initialClients={clients} initialServicePlans={servicePlans} />;
+  } catch (error) {
+    console.error('Failed to load clients from Prisma. Falling back to mock data.', error);
 
-const navigationItems: Array<{ id: ActiveView; label: string }> = [
-  { id: 'today', label: 'Hoy' },
-  { id: 'clients', label: 'Clientes' },
-  { id: 'schedule', label: 'Agenda semanal' },
-  { id: 'billing', label: 'Pendiente de facturar' },
-  { id: 'payroll', label: 'Horas para nómina' },
-];
-
-export default function Home() {
-  const [activeView, setActiveView] = useState<ActiveView>('today');
-  const [clients, setClients] = useState<MockClient[]>(mockClients);
-  const [servicePlans, setServicePlans] = useState<MockClientServicePlan[]>(mockServicePlans);
-
-  const handleSaveClient = (client: MockClient) => {
-    setClients((currentClients) => {
-      const exists = currentClients.some((currentClient) => currentClient.id === client.id);
-
-      return exists
-        ? currentClients.map((currentClient) =>
-            currentClient.id === client.id ? client : currentClient,
-          )
-        : [...currentClients, client];
-    });
-  };
-
-  const handleSaveServicePlan = (plan: MockClientServicePlan) => {
-    setServicePlans((currentPlans) => {
-      const exists = currentPlans.some((currentPlan) => currentPlan.id === plan.id);
-
-      return exists
-        ? currentPlans.map((currentPlan) => (currentPlan.id === plan.id ? plan : currentPlan))
-        : [...currentPlans, plan];
-    });
-  };
-
-  return (
-    <>
-      <nav className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap gap-2">
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`rounded-md border px-3 py-2 text-sm font-semibold shadow-sm ${
-                activeView === item.id
-                  ? 'border-emerald-700 bg-emerald-700 text-white'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-              onClick={() => setActiveView(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {activeView === 'today' ? <TodayPage /> : null}
-      {activeView === 'clients' ? (
-        <ClientsPage
-          clients={clients}
-          servicePlans={servicePlans}
-          onSaveClient={handleSaveClient}
-          onSaveServicePlan={handleSaveServicePlan}
-        />
-      ) : null}
-      {activeView === 'schedule' ? (
-        <WeeklySchedulePage clients={clients} servicePlans={servicePlans} />
-      ) : null}
-      {activeView === 'billing' ? <PendingBillingPage /> : null}
-      {activeView === 'payroll' ? <PayrollHoursPage /> : null}
-    </>
-  );
+    return <AppShell initialClients={[]} initialServicePlans={[]} />;
+  }
 }
