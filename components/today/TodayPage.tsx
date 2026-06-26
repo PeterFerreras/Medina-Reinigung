@@ -9,6 +9,10 @@ import { VisitRegistrationForm } from '../visits/VisitRegistrationForm';
 import { DateNavigator } from './DateNavigator';
 import { VisitStatusGroup } from './VisitStatusGroup';
 
+type TodayPageProps = {
+  initialVisits?: MockServiceVisit[];
+};
+
 const statusGroups: Array<{ status: VisitStatus; title: string }> = [
   { status: 'SCHEDULED', title: 'Pendientes' },
   { status: 'COMPLETED', title: 'Realizados' },
@@ -42,10 +46,13 @@ function formatSelectedDate(dateKey: string): string {
   }).format(new Date(year, month - 1, day));
 }
 
-export function TodayPage() {
+export function TodayPage({ initialVisits = [] }: TodayPageProps) {
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
   const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
-  const visits = useMemo(() => createMockVisits(), []);
+  const visits = useMemo(
+    () => (initialVisits.length > 0 ? initialVisits : createMockVisits()),
+    [initialVisits],
+  );
   const visitsForDate = getVisitsForDate(visits, selectedDate);
   const selectedVisit = visitsForDate.find((visit) => visit.id === selectedVisitId);
   const summaryItems = [

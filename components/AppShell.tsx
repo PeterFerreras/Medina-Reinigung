@@ -11,12 +11,14 @@ import { mockClients } from '@/domain/clients/mock-clients';
 import type { MockClient } from '@/domain/clients/types';
 import { mockServicePlans } from '@/domain/schedule/mock-service-plans';
 import type { MockClientServicePlan } from '@/domain/schedule/types';
+import type { MockServiceVisit } from '@/domain/visits/types';
 
 type ActiveView = 'today' | 'clients' | 'schedule' | 'billing' | 'payroll';
 
 type AppShellProps = {
   initialClients: MockClient[];
   initialServicePlans: MockClientServicePlan[];
+  initialVisits: MockServiceVisit[];
 };
 
 const navigationItems: Array<{ id: ActiveView; label: string }> = [
@@ -27,7 +29,11 @@ const navigationItems: Array<{ id: ActiveView; label: string }> = [
   { id: 'payroll', label: 'Horas para nómina' },
 ];
 
-export function AppShell({ initialClients, initialServicePlans }: AppShellProps) {
+export function AppShell({
+  initialClients,
+  initialServicePlans,
+  initialVisits,
+}: AppShellProps) {
   const [activeView, setActiveView] = useState<ActiveView>('today');
   const [clients, setClients] = useState<MockClient[]>(
     initialClients.length > 0 ? initialClients : mockClients,
@@ -79,7 +85,7 @@ export function AppShell({ initialClients, initialServicePlans }: AppShellProps)
         </div>
       </nav>
 
-      {activeView === 'today' ? <TodayPage /> : null}
+      {activeView === 'today' ? <TodayPage initialVisits={initialVisits} /> : null}
       {activeView === 'clients' ? (
         <ClientsPage
           clients={clients}
