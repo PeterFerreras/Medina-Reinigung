@@ -26,4 +26,10 @@ export type MockServiceVisit = {
   vatRate: number;
   status: VisitStatus;
   notes?: string;
+  servicePlanId?: string;
+  employeeHours?: Array<{
+    employeeId: string;
+    hoursWorked: number;
+  }>;
+  isPersisted?: boolean;
 };

@@ -1,11 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
+import { registerVisitAction } from '@/app/actions/register-visit';
 import { calculateEmployeePay, calculateVisitTotals } from '@/domain/calculations';
-import { mockEmployees } from '@/domain/employees/mock-employees';
 import type { MockEmployee } from '@/domain/employees/types';
 import type { MockServiceVisit } from '@/domain/visits/types';
+import type { RegisterVisitStatus } from '@/services/visits/visit-registration-schema';
 
 import { DetailedEmployeeHours } from './DetailedEmployeeHours';
 import { EmployeeSelector } from './EmployeeSelector';
@@ -16,10 +18,24 @@ type RegistrationMode = 'quick' | 'detailed';
 
 type VisitRegistrationFormProps = {
   visit: MockServiceVisit;
+  employees: MockEmployee[];
+  canPersistVisit: boolean;
+  onVisitSaved: (visit: MockServiceVisit) => void;
 };
 
-function getSelectedEmployees(selectedEmployeeIds: string[]): MockEmployee[] {
-  return mockEmployees.filter((employee) => selectedEmployeeIds.includes(employee.id));
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
+const registrationStatuses: Array<{ value: RegisterVisitStatus; label: string }> = [
+  { value: 'COMPLETED', label: 'Realizada' },
+  { value: 'CANCELLED', label: 'Cancelada' },
+  { value: 'NO_BILLABLE', label: 'No facturable' },
+];
+
+function getSelectedEmployees(
+  employees: MockEmployee[],
+  selectedEmployeeIds: string[],
+): MockEmployee[] {
+  return employees.filter((employee) => selectedEmployeeIds.includes(employee.id));
 }
 
 function getEmployeeHours(
@@ -33,19 +49,51 @@ function getEmployeeHours(
   );
 }
 
-export function VisitRegistrationForm({ visit }: VisitRegistrationFormProps) {
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
-  const [mode, setMode] = useState<RegistrationMode>('quick');
-  const [quickHours, setQuickHours] = useState(visit.defaultHours);
-  const [detailedHours, setDetailedHours] = useState<Record<string, number>>({});
+function getInitialStatus(visit: MockServiceVisit): RegisterVisitStatus {
+  return visit.status === 'CANCELLED' || visit.status === 'NO_BILLABLE'
+    ? visit.status
+    : 'COMPLETED';
+}
+
+function getInitialDetailedHours(visit: MockServiceVisit): Record<string, number> {
+  return Object.fromEntries(
+    (visit.employeeHours ?? []).map((entry) => [entry.employeeId, entry.hoursWorked]),
+  );
+}
+
+export function VisitRegistrationForm({
+  visit,
+  employees,
+  canPersistVisit,
+  onVisitSaved,
+}: VisitRegistrationFormProps) {
+  const router = useRouter();
+  const savedEmployeeHours = visit.employeeHours ?? [];
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(
+    savedEmployeeHours.map((entry) => entry.employeeId),
+  );
+  const [registrationStatus, setRegistrationStatus] =
+    useState<RegisterVisitStatus>(getInitialStatus(visit));
+  const [mode, setMode] = useState<RegistrationMode>(
+    savedEmployeeHours.length > 0 ? 'detailed' : 'quick',
+  );
+  const [quickHours, setQuickHours] = useState(
+    savedEmployeeHours[0]?.hoursWorked ?? visit.defaultHours,
+  );
+  const [detailedHours, setDetailedHours] = useState<Record<string, number>>(
+    getInitialDetailedHours(visit),
+  );
+  const [notes, setNotes] = useState(visit.notes ?? '');
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const selectedEmployees = useMemo(
-    () => getSelectedEmployees(selectedEmployeeIds),
-    [selectedEmployeeIds],
+    () => getSelectedEmployees(employees, selectedEmployeeIds),
+    [employees, selectedEmployeeIds],
   );
   const employeeHours = getEmployeeHours(selectedEmployees, mode, quickHours, detailedHours);
   const totals = calculateVisitTotals({
-    visitStatus: visit.status,
+    visitStatus: registrationStatus,
     employeeHours,
     clientHourlyRate: visit.clientHourlyRate,
     vatRate: visit.vatRate,
@@ -75,17 +123,57 @@ export function VisitRegistrationForm({ visit }: VisitRegistrationFormProps) {
     }));
   };
 
-  const handleSave = () => {
-    console.log('Save visit registration', {
+  const handleSave = async () => {
+    setSaveState('saving');
+    setSaveError(null);
+
+    const payload = {
       visitId: visit.id,
-      mode,
-      employees: employeePays.map((item) => ({
-        employeeId: item.employee.id,
-        hours: item.hours,
-        estimatedPay: item.estimatedPay,
+      servicePlanId: visit.servicePlanId,
+      scheduledDate: visit.scheduledDate,
+      status: registrationStatus,
+      employeeHours: selectedEmployees.map((employee, index) => ({
+        employeeId: employee.id,
+        hoursWorked: employeeHours[index] ?? 0,
       })),
+      notes: notes.trim() ? notes.trim() : undefined,
+    };
+    const updatedVisit: MockServiceVisit = {
+      ...visit,
+      id: visit.isPersisted === false ? visit.id : visit.id,
+      status: registrationStatus,
+      notes: payload.notes,
+      employeeHours: payload.employeeHours,
+      isPersisted: canPersistVisit ? true : visit.isPersisted,
+    };
+
+    if (canPersistVisit) {
+      const result = await registerVisitAction(payload);
+
+      if (!result.ok) {
+        setSaveState('error');
+        setSaveError(result.error);
+        return;
+      }
+
+      onVisitSaved({
+        ...updatedVisit,
+        id: result.visitId,
+        isPersisted: true,
+      });
+      setSaveState('saved');
+      router.refresh();
+      return;
+    }
+
+    console.log('Save visit registration', {
+      mode,
+      ...payload,
+      employees: employeePays,
       totals,
     });
+    onVisitSaved(updatedVisit);
+    setSaveState('saved');
   };
 
   return (
@@ -120,10 +208,30 @@ export function VisitRegistrationForm({ visit }: VisitRegistrationFormProps) {
 
       <div className="mt-4 flex flex-col gap-5">
         <EmployeeSelector
-          employees={mockEmployees}
+          employees={employees}
           selectedEmployeeIds={selectedEmployeeIds}
           onToggleEmployee={handleToggleEmployee}
         />
+
+        <fieldset className="flex flex-col gap-3">
+          <legend className="text-sm font-semibold text-slate-950">Estado del registro</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {registrationStatuses.map((status) => (
+              <button
+                key={status.value}
+                type="button"
+                className={`rounded-md border px-3 py-2 text-sm font-semibold ${
+                  registrationStatus === status.value
+                    ? 'border-emerald-700 bg-emerald-700 text-white'
+                    : 'border-slate-300 bg-white text-slate-700'
+                }`}
+                onClick={() => setRegistrationStatus(status.value)}
+              >
+                {status.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -162,12 +270,34 @@ export function VisitRegistrationForm({ visit }: VisitRegistrationFormProps) {
 
         <VisitCalculationSummary totals={totals} employeePays={employeePays} />
 
+        <label className="grid gap-2 text-sm font-medium text-slate-700">
+          Nota
+          <textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            rows={3}
+            className="rounded-md border border-slate-300 px-3 py-2 text-slate-950 shadow-sm"
+          />
+        </label>
+
+        {saveState === 'saved' ? (
+          <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+            Guardado correctamente.
+          </p>
+        ) : null}
+        {saveState === 'error' ? (
+          <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-800">
+            {saveError ?? 'Error al guardar.'}
+          </p>
+        ) : null}
+
         <button
           type="button"
-          className="w-full rounded-md bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+          className="w-full rounded-md bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           onClick={handleSave}
+          disabled={saveState === 'saving'}
         >
-          Guardar registro
+          {saveState === 'saving' ? 'Guardando...' : 'Guardar registro'}
         </button>
       </div>
     </section>

@@ -44,6 +44,10 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       clientHourlyRate: 52,
       vatRate: 8.1,
       status: 'COMPLETED',
+      employeeHours: [
+        { employeeId: 'employee-ana', hoursWorked: 3 },
+        { employeeId: 'employee-luis', hoursWorked: 3 },
+      ],
     },
     {
       id: 'visit-rivera-cancelled',
@@ -69,6 +73,7 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       clientHourlyRate: 50,
       vatRate: 8.1,
       status: 'NO_BILLABLE',
+      employeeHours: [{ employeeId: 'employee-mara', hoursWorked: 1.5 }],
     },
     {
       id: 'visit-seefeld-review',

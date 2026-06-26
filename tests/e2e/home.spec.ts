@@ -20,15 +20,28 @@ test('registers quick hours for a completed mock visit', async ({ page }) => {
   await openApp(page);
 
   const completedVisitCard = page.locator('article').filter({ hasText: 'Helvetia Treuhand AG' });
-  await completedVisitCard.getByRole('button', { name: 'Registrar' }).click();
+  await completedVisitCard.getByRole('button', { name: 'Editar registro' }).click();
 
-  await page.getByLabel(/Ana Medina/).check();
-  await page.getByLabel(/Luis Keller/).check();
-  await page.getByLabel('Horas para todos').fill('3');
+  await expect(page.getByLabel(/Ana Medina/)).toBeChecked();
+  await expect(page.getByLabel(/Luis Keller/)).toBeChecked();
 
   await expect(page.getByText('Horas facturables')).toBeVisible();
   await expect(page.getByText('Horas facturables').locator('..').getByText('6')).toBeVisible();
   await expect(page.getByText('Total cliente').locator('..').getByText('CHF 337.27')).toBeVisible();
+});
+
+test('changes a scheduled mock visit registration button after saving', async ({ page }) => {
+  await openApp(page);
+
+  const scheduledVisitCard = page.locator('article').filter({ hasText: 'Praxis Limmatblick' });
+  await scheduledVisitCard.getByRole('button', { name: 'Registrar' }).click();
+
+  await page.getByLabel(/Ana Medina/).check();
+  await page.getByLabel(/Luis Keller/).check();
+  await page.getByLabel('Horas para todos').fill('3');
+  await page.getByRole('button', { name: 'Guardar registro' }).click();
+
+  await expect(scheduledVisitCard.getByRole('button', { name: 'Editar registro' })).toBeVisible();
 });
 
 test('shows pending billing grouped by client', async ({ page }) => {

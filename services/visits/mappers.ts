@@ -42,5 +42,11 @@ export function mapServiceVisitRecord(visit: ServiceVisitWithRelations): MockSer
     vatRate: visit.vatRateSnapshot.toNumber(),
     status: visit.status,
     notes: visit.notes ?? undefined,
+    servicePlanId: visit.servicePlanId ?? undefined,
+    employeeHours: visit.employeeHours.map((entry) => ({
+      employeeId: entry.employeeId,
+      hoursWorked: entry.hoursWorked.toNumber(),
+    })),
+    isPersisted: true,
   };
 }

@@ -18,6 +18,22 @@ type ServiceVisitCardProps = {
   onAction: (visitId: string, action: VisitAction) => void;
 };
 
+function getRegistrationButtonLabel(visit: MockServiceVisit): string {
+  if (visit.isPersisted === false) {
+    return 'Registrar';
+  }
+
+  if (
+    visit.status === 'COMPLETED' ||
+    visit.status === 'NO_BILLABLE' ||
+    visit.status === 'CANCELLED'
+  ) {
+    return 'Editar registro';
+  }
+
+  return 'Registrar';
+}
+
 export function ServiceVisitCard({ visit, onAction }: ServiceVisitCardProps) {
   const actionButtonClass =
     'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50';
@@ -63,7 +79,7 @@ export function ServiceVisitCard({ visit, onAction }: ServiceVisitCardProps) {
           className={actionButtonClass}
           onClick={() => onAction(visit.id, 'register')}
         >
-          Registrar
+          {getRegistrationButtonLabel(visit)}
         </button>
         <button
           type="button"
