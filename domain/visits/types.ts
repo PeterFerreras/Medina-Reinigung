@@ -23,6 +23,7 @@ export type MockServiceVisit = {
   defaultHours: number;
   defaultPeopleCount: number;
   clientHourlyRate: number;
+  vatRate: number;
   status: VisitStatus;
   notes?: string;
 };

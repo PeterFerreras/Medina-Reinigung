@@ -29,6 +29,7 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       defaultHours: 3,
       defaultPeopleCount: 2,
       clientHourlyRate: 48,
+      vatRate: 8.1,
       status: 'SCHEDULED',
       notes: 'Entrada por la puerta lateral.',
     },
@@ -41,6 +42,7 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       defaultHours: 3,
       defaultPeopleCount: 1,
       clientHourlyRate: 52,
+      vatRate: 8.1,
       status: 'COMPLETED',
     },
     {
@@ -52,6 +54,7 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       defaultHours: 2,
       defaultPeopleCount: 1,
       clientHourlyRate: 45,
+      vatRate: 8.1,
       status: 'CANCELLED',
       notes: 'Cliente pidio mover la visita.',
     },
@@ -64,6 +67,7 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       defaultHours: 1.5,
       defaultPeopleCount: 1,
       clientHourlyRate: 50,
+      vatRate: 8.1,
       status: 'NO_BILLABLE',
     },
     {
@@ -75,6 +79,7 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       defaultHours: 2.5,
       defaultPeopleCount: 2,
       clientHourlyRate: 55,
+      vatRate: 8.1,
       status: 'NEEDS_REVIEW',
       notes: 'Confirmar material especial.',
     },
@@ -87,6 +92,7 @@ export function createMockVisits(referenceDate = new Date()): MockServiceVisit[]
       defaultHours: 2,
       defaultPeopleCount: 1,
       clientHourlyRate: 49,
+      vatRate: 8.1,
       status: 'SCHEDULED',
     },
   ];

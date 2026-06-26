@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { createMockVisits, toDateKey } from '@/domain/visits/mock-visits';
 import type { MockServiceVisit, VisitStatus } from '@/domain/visits/types';
 
+import { VisitRegistrationForm } from '../visits/VisitRegistrationForm';
 import { DateNavigator } from './DateNavigator';
 import { VisitStatusGroup } from './VisitStatusGroup';
 
@@ -43,8 +44,10 @@ function formatSelectedDate(dateKey: string): string {
 
 export function TodayPage() {
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
+  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
   const visits = useMemo(() => createMockVisits(), []);
   const visitsForDate = getVisitsForDate(visits, selectedDate);
+  const selectedVisit = visitsForDate.find((visit) => visit.id === selectedVisitId);
   const summaryItems = [
     { label: 'Pendientes', value: countByStatus(visitsForDate, 'SCHEDULED') },
     { label: 'Realizadas', value: countByStatus(visitsForDate, 'COMPLETED') },
@@ -56,6 +59,11 @@ export function TodayPage() {
     visitId: string,
     action: 'register' | 'cancel' | 'no-billable' | 'note',
   ) => {
+    if (action === 'register') {
+      setSelectedVisitId(visitId);
+      return;
+    }
+
     console.log('Visit action', { visitId, action });
   };
 
@@ -80,15 +88,27 @@ export function TodayPage() {
           ))}
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          {statusGroups.map((group) => (
-            <VisitStatusGroup
-              key={group.status}
-              title={group.title}
-              visits={getVisitsByStatus(visitsForDate, group.status)}
-              onVisitAction={handleVisitAction}
-            />
-          ))}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_28rem]">
+          <div className="grid gap-6">
+            {statusGroups.map((group) => (
+              <VisitStatusGroup
+                key={group.status}
+                title={group.title}
+                visits={getVisitsByStatus(visitsForDate, group.status)}
+                onVisitAction={handleVisitAction}
+              />
+            ))}
+          </div>
+
+          <aside className="xl:sticky xl:top-6 xl:self-start">
+            {selectedVisit ? (
+              <VisitRegistrationForm visit={selectedVisit} />
+            ) : (
+              <section className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+                Selecciona Registrar en una visita para cargar el formulario.
+              </section>
+            )}
+          </aside>
         </div>
       </div>
     </main>
