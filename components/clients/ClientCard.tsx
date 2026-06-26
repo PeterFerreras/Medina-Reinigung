@@ -8,6 +8,8 @@ type ClientCardProps = {
   client: MockClient;
   plans: MockClientServicePlan[];
   referenceDate: Date;
+  onSelect: (clientId: string) => void;
+  onEdit: (client: MockClient) => void;
 };
 
 function getNextVisit(plans: MockClientServicePlan[], referenceDate: Date): string {
@@ -18,7 +20,13 @@ function getNextVisit(plans: MockClientServicePlan[], referenceDate: Date): stri
   return nextDates[0] ?? 'Sin visita programada';
 }
 
-export function ClientCard({ client, plans, referenceDate }: ClientCardProps) {
+export function ClientCard({
+  client,
+  plans,
+  referenceDate,
+  onSelect,
+  onEdit,
+}: ClientCardProps) {
   const activePlans = plans.filter((plan) => plan.active);
 
   return (
@@ -52,6 +60,23 @@ export function ClientCard({ client, plans, referenceDate }: ClientCardProps) {
         {activePlans.map((plan) => (
           <ClientServicePlanCard key={plan.id} plan={plan} referenceDate={referenceDate} />
         ))}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          onClick={() => onSelect(client.id)}
+        >
+          Ver planes
+        </button>
+        <button
+          type="button"
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          onClick={() => onEdit(client)}
+        >
+          Editar
+        </button>
       </div>
     </article>
   );

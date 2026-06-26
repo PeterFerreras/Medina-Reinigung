@@ -1,19 +1,24 @@
-import { mockClients } from '@/domain/clients/mock-clients';
+import type { MockClient } from '@/domain/clients/types';
 import {
   getUpcomingServices,
   groupPlansByWeekday,
   weekdays,
 } from '@/domain/schedule/recurrence';
-import { mockServicePlans } from '@/domain/schedule/mock-service-plans';
+import type { MockClientServicePlan } from '@/domain/schedule/types';
 
 import { UpcomingServicesList } from './UpcomingServicesList';
 import { WeekdayColumn } from './WeekdayColumn';
 
-export function WeeklySchedulePage() {
+type WeeklySchedulePageProps = {
+  clients: MockClient[];
+  servicePlans: MockClientServicePlan[];
+};
+
+export function WeeklySchedulePage({ clients, servicePlans }: WeeklySchedulePageProps) {
   const referenceDate = new Date();
-  const groupedPlans = groupPlansByWeekday(mockServicePlans);
-  const clientsById = new Map(mockClients.map((client) => [client.id, client]));
-  const upcomingServices = getUpcomingServices(mockServicePlans, referenceDate, 30);
+  const groupedPlans = groupPlansByWeekday(servicePlans);
+  const clientsById = new Map(clients.map((client) => [client.id, client]));
+  const upcomingServices = getUpcomingServices(servicePlans, referenceDate, 30);
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 sm:px-6 lg:px-8">

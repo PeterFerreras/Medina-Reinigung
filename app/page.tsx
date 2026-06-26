@@ -7,6 +7,10 @@ import { ClientsPage } from '@/components/clients/ClientsPage';
 import { PayrollHoursPage } from '@/components/payroll/PayrollHoursPage';
 import { WeeklySchedulePage } from '@/components/schedule/WeeklySchedulePage';
 import { TodayPage } from '@/components/today/TodayPage';
+import { mockClients } from '@/domain/clients/mock-clients';
+import type { MockClient } from '@/domain/clients/types';
+import { mockServicePlans } from '@/domain/schedule/mock-service-plans';
+import type { MockClientServicePlan } from '@/domain/schedule/types';
 
 type ActiveView = 'today' | 'clients' | 'schedule' | 'billing' | 'payroll';
 
@@ -20,6 +24,30 @@ const navigationItems: Array<{ id: ActiveView; label: string }> = [
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActiveView>('today');
+  const [clients, setClients] = useState<MockClient[]>(mockClients);
+  const [servicePlans, setServicePlans] = useState<MockClientServicePlan[]>(mockServicePlans);
+
+  const handleSaveClient = (client: MockClient) => {
+    setClients((currentClients) => {
+      const exists = currentClients.some((currentClient) => currentClient.id === client.id);
+
+      return exists
+        ? currentClients.map((currentClient) =>
+            currentClient.id === client.id ? client : currentClient,
+          )
+        : [...currentClients, client];
+    });
+  };
+
+  const handleSaveServicePlan = (plan: MockClientServicePlan) => {
+    setServicePlans((currentPlans) => {
+      const exists = currentPlans.some((currentPlan) => currentPlan.id === plan.id);
+
+      return exists
+        ? currentPlans.map((currentPlan) => (currentPlan.id === plan.id ? plan : currentPlan))
+        : [...currentPlans, plan];
+    });
+  };
 
   return (
     <>
@@ -43,8 +71,17 @@ export default function Home() {
       </nav>
 
       {activeView === 'today' ? <TodayPage /> : null}
-      {activeView === 'clients' ? <ClientsPage /> : null}
-      {activeView === 'schedule' ? <WeeklySchedulePage /> : null}
+      {activeView === 'clients' ? (
+        <ClientsPage
+          clients={clients}
+          servicePlans={servicePlans}
+          onSaveClient={handleSaveClient}
+          onSaveServicePlan={handleSaveServicePlan}
+        />
+      ) : null}
+      {activeView === 'schedule' ? (
+        <WeeklySchedulePage clients={clients} servicePlans={servicePlans} />
+      ) : null}
       {activeView === 'billing' ? <PendingBillingPage /> : null}
       {activeView === 'payroll' ? <PayrollHoursPage /> : null}
     </>
