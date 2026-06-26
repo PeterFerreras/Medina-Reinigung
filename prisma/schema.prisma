@@ -150,7 +150,7 @@ model ClientServicePlan {
   clientId           String
   frequencyType      FrequencyType
   weekday            Weekday?
-  startTime          DateTime?     @db.Time
+  startTime          String?
   defaultHours       Decimal       @db.Decimal(8, 2)
   defaultPeopleCount Int
   clientHourlyRate   Decimal       @db.Decimal(10, 2)
@@ -219,6 +219,7 @@ model VisitEmployeeHour {
   visit    ServiceVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
   employee Employee     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
 
+  @@unique([visitId, employeeId])
   @@index([visitId])
   @@index([employeeId])
   @@index([employeeId, payrollStatus])
