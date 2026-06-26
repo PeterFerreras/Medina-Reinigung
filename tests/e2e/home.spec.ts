@@ -2,7 +2,9 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
 async function openApp(page: Page) {
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('navigation').getByRole('button', { name: 'Hoy' })).toBeVisible();
+  await page.waitForTimeout(1000);
 }
 
 test('shows the Today page with mock visits grouped by status', async ({ page }) => {

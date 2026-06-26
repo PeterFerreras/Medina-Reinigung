@@ -11,9 +11,13 @@
     "format:check": "prettier --check .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "prisma db seed",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
+  },
+  "prisma": {
+    "seed": "node prisma/seed-runner.cjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
