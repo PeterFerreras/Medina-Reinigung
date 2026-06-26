@@ -36,3 +36,15 @@ test('shows pending billing grouped by client', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Generar resumen' }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Enviar a bexio/ }).first()).toBeDisabled();
 });
+
+test('shows payroll hours grouped by employee', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Horas para nómina' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Horas para nómina' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ana Medina' })).toBeVisible();
+  await expect(page.getByText('Horas trabajadas')).toBeVisible();
+  await expect(page.getByText('11.5')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Exportar Excel' }).first()).toBeVisible();
+});
