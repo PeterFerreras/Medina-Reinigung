@@ -13,6 +13,12 @@ export type BillingInvoiceStatus =
   | 'PAID'
   | 'CANCELLED';
 
+export type BillingPeriodLabel =
+  | 'Primera quincena'
+  | 'Segunda quincena'
+  | 'Mes completo'
+  | 'Rango personalizado';
+
 export type MockPendingBillingVisit = {
   id: string;
   clientId: string;

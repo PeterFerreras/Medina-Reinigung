@@ -7,6 +7,7 @@ import { ClientsPage } from '@/components/clients/ClientsPage';
 import { PayrollHoursPage } from '@/components/payroll/PayrollHoursPage';
 import { WeeklySchedulePage } from '@/components/schedule/WeeklySchedulePage';
 import { TodayPage } from '@/components/today/TodayPage';
+import type { BillingPeriodLabel, PendingBillingGroupedResult } from '@/domain/billing/types';
 import type { MockClient } from '@/domain/clients/types';
 import type { MockEmployee } from '@/domain/employees/types';
 import type { MockClientServicePlan } from '@/domain/schedule/types';
@@ -20,6 +21,7 @@ type AppShellProps = {
   initialVisits: MockServiceVisit[];
   initialEmployees: MockEmployee[];
   initialTodayDate: string;
+  pendingBillingGroups: Partial<Record<BillingPeriodLabel, PendingBillingGroupedResult>>;
   isUsingTestData: boolean;
 };
 
@@ -37,6 +39,7 @@ export function AppShell({
   initialVisits,
   initialEmployees,
   initialTodayDate,
+  pendingBillingGroups,
   isUsingTestData,
 }: AppShellProps) {
   const [activeView, setActiveView] = useState<ActiveView>('today');
@@ -106,7 +109,9 @@ export function AppShell({
       {activeView === 'schedule' ? (
         <WeeklySchedulePage clients={clients} servicePlans={servicePlans} />
       ) : null}
-      {activeView === 'billing' ? <PendingBillingPage /> : null}
+      {activeView === 'billing' ? (
+        <PendingBillingPage pendingBillingGroups={pendingBillingGroups} />
+      ) : null}
       {activeView === 'payroll' ? <PayrollHoursPage /> : null}
     </>
   );

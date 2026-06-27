@@ -1,9 +1,11 @@
+import type { BillingPeriodLabel } from '@/domain/billing/types';
+
 type BillingPeriodFilterProps = {
-  selectedPeriod: string;
-  onPeriodChange: (period: string) => void;
+  selectedPeriod: BillingPeriodLabel;
+  onPeriodChange: (period: BillingPeriodLabel) => void;
 };
 
-const periods = [
+const periods: BillingPeriodLabel[] = [
   'Primera quincena',
   'Segunda quincena',
   'Mes completo',
