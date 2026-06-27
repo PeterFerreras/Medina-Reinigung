@@ -2,18 +2,36 @@
 
 import { useMemo, useState } from 'react';
 
-import { groupPendingBilling } from '@/domain/billing/group-pending-billing';
-import { mockPendingBillingVisits } from '@/domain/billing/mock-billing';
+import type {
+  BillingPeriodLabel,
+  PendingBillingGroupedResult,
+} from '@/domain/billing/types';
 
 import { BillingClientGroup } from './BillingClientGroup';
 import { BillingPeriodFilter } from './BillingPeriodFilter';
 import { BillingSummaryCard } from './BillingSummaryCard';
 
-export function PendingBillingPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState('Primera quincena');
+type PendingBillingPageProps = {
+  pendingBillingGroups: Partial<Record<BillingPeriodLabel, PendingBillingGroupedResult>>;
+};
+
+const emptyBillingGroups: PendingBillingGroupedResult = {
+  clientGroups: [],
+  totals: {
+    clientCount: 0,
+    totalHours: 0,
+    subtotal: 0,
+    vatAmount: 0,
+    total: 0,
+  },
+};
+
+export function PendingBillingPage({ pendingBillingGroups }: PendingBillingPageProps) {
+  const [selectedPeriod, setSelectedPeriod] =
+    useState<BillingPeriodLabel>('Primera quincena');
   const groupedBilling = useMemo(
-    () => groupPendingBilling(mockPendingBillingVisits),
-    [],
+    () => pendingBillingGroups[selectedPeriod] ?? emptyBillingGroups,
+    [pendingBillingGroups, selectedPeriod],
   );
 
   return (
@@ -37,11 +55,17 @@ export function PendingBillingPage() {
 
         <BillingSummaryCard totals={groupedBilling.totals} />
 
-        <div className="flex flex-col gap-5">
-          {groupedBilling.clientGroups.map((group) => (
-            <BillingClientGroup key={group.clientId} group={group} />
-          ))}
-        </div>
+        {groupedBilling.clientGroups.length > 0 ? (
+          <div className="flex flex-col gap-5">
+            {groupedBilling.clientGroups.map((group) => (
+              <BillingClientGroup key={group.clientId} group={group} />
+            ))}
+          </div>
+        ) : (
+          <section className="rounded-md border border-dashed border-slate-300 bg-white p-8 text-center text-slate-600">
+            No hay servicios pendientes de facturar para este per&iacute;odo.
+          </section>
+        )}
       </div>
     </main>
   );

@@ -1,8 +1,16 @@
 import { AppShell } from '@/components/AppShell';
+import { groupPendingBilling } from '@/domain/billing/group-pending-billing';
 import { mockClients } from '@/domain/clients/mock-clients';
 import { mockEmployees } from '@/domain/employees/mock-employees';
 import { mockServicePlans } from '@/domain/schedule/mock-service-plans';
 import { createMockVisits } from '@/domain/visits/mock-visits';
+import { mockPendingBillingVisits } from '@/domain/billing/mock-billing';
+import type { BillingPeriodLabel, PendingBillingGroupedResult } from '@/domain/billing/types';
+import {
+  getBillingPeriodRange,
+  getPendingBilling,
+  type PendingBillingPeriod,
+} from '@/services/billing/get-pending-billing';
 import { getEmployees } from '@/services/employees/get-employees';
 import { getClientsWithServicePlans } from '@/services/clients/get-clients-with-service-plans';
 import { getTodayVisits } from '@/services/visits/get-today-visits';
@@ -27,8 +35,64 @@ function getInitialTodayDate(visits: Array<{ scheduledDate: string }>): string {
   return upcomingVisit?.scheduledDate ?? visits.at(-1)?.scheduledDate ?? today;
 }
 
+const billingPeriods: PendingBillingPeriod[] = [
+  'Primera quincena',
+  'Segunda quincena',
+  'Mes completo',
+];
+
+const emptyBillingGroups: PendingBillingGroupedResult = {
+  clientGroups: [],
+  totals: {
+    clientCount: 0,
+    totalHours: 0,
+    subtotal: 0,
+    vatAmount: 0,
+    total: 0,
+  },
+};
+
+function getEmptyPendingBillingGroups(): Partial<
+  Record<BillingPeriodLabel, PendingBillingGroupedResult>
+> {
+  return Object.fromEntries(
+    billingPeriods.map((period) => [period, emptyBillingGroups]),
+  );
+}
+
+function getMockPendingBillingGroups(
+  referenceDate: Date,
+): Partial<Record<BillingPeriodLabel, PendingBillingGroupedResult>> {
+  return Object.fromEntries(
+    billingPeriods.map((period) => {
+      const { startDate, endDate } = getBillingPeriodRange({ period, referenceDate });
+      const startKey = toDateKey(startDate);
+      const endKey = toDateKey(endDate);
+      const visitsForPeriod = mockPendingBillingVisits.filter(
+        (visit) => visit.serviceDate >= startKey && visit.serviceDate <= endKey,
+      );
+
+      return [period, groupPendingBilling(visitsForPeriod)];
+    }),
+  );
+}
+
+async function getPendingBillingGroups(
+  referenceDate: Date,
+): Promise<Partial<Record<BillingPeriodLabel, PendingBillingGroupedResult>>> {
+  const entries = await Promise.all(
+    billingPeriods.map(async (period) => [
+      period,
+      await getPendingBilling({ period, referenceDate }),
+    ]),
+  );
+
+  return Object.fromEntries(entries);
+}
+
 export default async function Home() {
-  const today = toDateKey(new Date());
+  const now = new Date();
+  const today = toDateKey(now);
 
   if (process.env.CLEANOPS_USE_MOCKS === '1') {
     const visits = createMockVisits();
@@ -40,17 +104,20 @@ export default async function Home() {
         initialVisits={visits}
         initialEmployees={mockEmployees}
         initialTodayDate={today}
+        pendingBillingGroups={getMockPendingBillingGroups(now)}
         isUsingTestData
       />
     );
   }
 
   try {
-    const [{ clients, servicePlans }, visits, employees] = await Promise.all([
-      getClientsWithServicePlans(),
-      getTodayVisits(),
-      getEmployees(),
-    ]);
+    const [{ clients, servicePlans }, visits, employees, pendingBillingGroups] =
+      await Promise.all([
+        getClientsWithServicePlans(),
+        getTodayVisits(),
+        getEmployees(),
+        getPendingBillingGroups(now),
+      ]);
 
     return (
       <AppShell
@@ -59,6 +126,7 @@ export default async function Home() {
         initialVisits={visits}
         initialEmployees={employees}
         initialTodayDate={getInitialTodayDate(visits)}
+        pendingBillingGroups={pendingBillingGroups}
         isUsingTestData={false}
       />
     );
@@ -72,6 +140,7 @@ export default async function Home() {
         initialVisits={[]}
         initialEmployees={[]}
         initialTodayDate={today}
+        pendingBillingGroups={getEmptyPendingBillingGroups()}
         isUsingTestData={false}
       />
     );
